@@ -1,41 +1,41 @@
-# 验证层次
+# Verification layers
 
-## 内容与结构
+## Content and structure
 
-每批修改自动检查：
+Each batch checks that:
 
-- 输出的当前文字逐段等于原文加修改计划。
-- 仅撤销本批插入、删除和新增批注后，文档恢复原稿的规范化文字及格式结构。
-- 既有修订元素及批注内容保留，新增批注的起点、终点、引用各有一个。
-- 新修订标识唯一，署名匹配计划，修订开关启用。
-- 修改范围限于正文与所需的修订设置、批注、关系、内容类型部件；其他部件字节一致。
-- 从磁盘重新读入结果，再按计划和记录时间重建，逐部件核对，覆盖文字、批注、作者、关系及设置。
+- The output's current text matches the source plus the edit plan, paragraph by paragraph.
+- Undoing only this batch's insertions, deletions, and new comments restores the source's normalized text and formatting structure.
+- Existing revision elements and comment contents are preserved, and each new comment has one start marker, end marker, and reference.
+- New revision IDs are unique, authors match the plan, and change tracking is enabled.
+- Changed parts are limited to the main document and the required revision settings, comments, relationships, and content types; other parts remain byte-identical.
+- Reading the output from disk and rebuilding from the plan and recorded timestamp produces matching parts, covering text, comments, authors, relationships, and settings.
 
-规范化只合并字符格式及 run 属性相同的相邻普通文字片段，使 Word 允许的片段拆分差异不影响比较。原有复杂元素、格式属性和批注位置仍参加结构比较。
+Normalization merges only adjacent ordinary text runs with identical character formatting and run attributes, so equivalent run splitting does not affect comparison. Existing complex elements, formatting properties, and comment positions remain part of the structural comparison.
 
-回执记录输入/输出指纹、操作范围、修订标识、检查结果及日期。保留原稿、计划和回执，可以重现本批核验。
+The receipt records input and output fingerprints, operation ranges, revision IDs, check results, and the timestamp. Retaining the original, plan, and receipt makes the batch verification reproducible.
 
-## 原生行为与版式
+## Native behavior and layout
 
-程序验收验证受支持操作的内容及结构；`full_schema`、`native_word` 与 `layout` 分别记录是否执行完整 OOXML schema、Word 原生操作和页面检查。
+Programmatic checks verify the content and structure of supported operations. The `full_schema`, `native_word`, and `layout` fields separately record whether full OOXML schema validation, native Word operations, and page inspection were performed.
 
-涉及新的编辑结构时，可用合成样例在 Word 中打开，实际执行接受/拒绝并保存读回，核对当前文字、历史修订及格式。这是扩充引擎支持范围时的回归测试。
+When adding support for a new editing structure, open a synthetic example in Word, actually accept or reject the changes, save it, and read it back to check text, earlier revisions, and formatting. Use this as a regression test when extending the engine.
 
-版式任务采用目标渲染环境检查修改页及受分页影响的后续页面。对于稳定、未变的页面可复用基线结果。批注核验依靠其文字、锚点及关系，页面截图仅作为显示效果的补充。
+For layout tasks, use the target rendering environment to inspect changed pages and subsequent pages affected by pagination. Reuse baseline results for stable, unchanged pages. Verify comments through their text, anchors, and relationships; page images supplement checks of their appearance.
 
-## 回归测试
+## Regression tests
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-测试使用合成 DOCX，覆盖跨文字片段、中英混排、格式继承、旧修订、表格、批注、歧义、整批失败、文件变化及输出被改动。CI 在 macOS、Linux、Windows 上运行相同测试。
+Synthetic DOCX tests cover edits across runs, mixed Chinese and English text, formatting inheritance, existing revisions, tables, comments, ambiguous anchors, whole-batch failure, source changes, and output tampering. CI runs the same tests on macOS, Linux, and Windows.
 
-## 公开依据
+## Public references
 
-独立实现依据 WordprocessingML 的插入、删除和批注结构，依赖 `lxml` 的 XML 读写能力。
+The implementation independently follows WordprocessingML insertion, deletion, and comment structures, using `lxml` for XML processing.
 
-- [Microsoft — 文档结构及修订元素](https://learn.microsoft.com/en-us/office/open-xml/word/how-to-accept-all-revisions-in-a-word-processing-document)
-- [Microsoft — 批注及锚点](https://learn.microsoft.com/en-us/office/open-xml/word/how-to-insert-a-comment-into-a-word-processing-document)
-- [Microsoft — Open XML 验证](https://learn.microsoft.com/en-us/office/open-xml/word/how-to-validate-a-word-processing-document)
-- [lxml 许可证](https://lxml.de/FAQ.html#what-is-the-license)
+- [Microsoft — Document structure and revision elements](https://learn.microsoft.com/en-us/office/open-xml/word/how-to-accept-all-revisions-in-a-word-processing-document)
+- [Microsoft — Comments and anchors](https://learn.microsoft.com/en-us/office/open-xml/word/how-to-insert-a-comment-into-a-word-processing-document)
+- [Microsoft — Open XML validation](https://learn.microsoft.com/en-us/office/open-xml/word/how-to-validate-a-word-processing-document)
+- [lxml license](https://lxml.de/FAQ.html#what-is-the-license)

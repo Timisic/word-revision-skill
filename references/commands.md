@@ -1,48 +1,48 @@
-# 命令与修改计划
+# Commands and edit plans
 
-在技能所在目录运行以下示例。实际文档路径可以位于任何工作目录。
+Run these examples from the skill directory. Document paths can point to any working directory.
 
 ```bash
-python scripts/word_revision.py inspect input.docx --query "30次"
+python scripts/word_revision.py inspect input.docx --query "30 repeated ratings"
 python scripts/word_revision.py inspect input.docx --paragraph p000012
 python scripts/word_revision.py inspect input.docx --summary
 ```
 
-`inspect` 返回 `source_sha256`、正文段落编号、当前文字、插入/删除之前的文字投影、批注、修订作者和字段。表格单元格也使用段落编号。页眉页脚及脚注、尾注单独列在 `other_stories`。
+`inspect` returns `source_sha256`, body paragraph IDs, current text, a text projection before insertions and deletions, comments, revision authors, and fields. Table cells also use paragraph IDs. Headers, footers, footnotes, and endnotes are listed separately in `other_stories`.
 
-`original_text` 是文字插入/删除的投影；段落合并、行移动和格式修订另外保留在修订记录中。定位主要使用当前文字与唯一锚点。
+`original_text` is a projection of text insertions and deletions; paragraph merges, moves, and formatting changes remain separate revision records. Use current text and a unique anchor to locate edits.
 
-## 计划格式
+## Plan format
 
 ```json
 {
-  "source_sha256": "inspect 返回的完整指纹",
+  "source_sha256": "full fingerprint returned by inspect",
   "author": "Reviewer",
   "operations": [
     {
       "type": "replace",
       "paragraph": "p000012",
-      "before": "重复30次评分",
-      "after": "重复10次评分",
-      "comment": "重复次数已按分析记录更正。"
+      "before": "30 repeated ratings",
+      "after": "10 repeated ratings",
+      "comment": "Updated to match the analysis record."
     },
     {
       "type": "comment",
       "paragraph": "p000014",
-      "quote": "模型表现稳定",
-      "text": "请补充支持稳定性判断的指标。"
+      "quote": "the model performs consistently",
+      "text": "Please provide a metric supporting this claim."
     }
   ]
 }
 ```
 
-各操作可设置自己的 `author`。替换操作可附带 `comment`，将说明锚定在同一修改范围；独立批注使用 `type: comment`。锚点须在指定段落中唯一；同一批操作采用原稿坐标，并保持目标区间互不重叠。多个替换位于同一段落时可一次提交。
+Each operation can specify its own `author`. A replacement can include `comment` to anchor an explanation to the same edit; a standalone comment uses `type: comment`. Anchors must be unique within the specified paragraph. All operations use source-document coordinates, with mutually nonoverlapping target ranges. Multiple replacements in one paragraph can be submitted together.
 
-`replace` 以最小文字差异生成 `w:ins` 和 `w:del`。例如上述替换只把“3”改成“1”。删除使用空字符串 `after`；插入可用原文作为锚点，将新文字加入 `after`。新批注锚定 `quote` 的完整范围，支持多行批注正文。
+`replace` generates `w:ins` and `w:del` from minimal text differences. The example above changes only “3” to “1”. Use an empty `after` string for deletion. For insertion, use existing text as the anchor and include the added text in `after`. New comments span the full `quote` range and support multiline comment text.
 
-跨多个普通文字片段的替换会保留被删除片段各自的格式；新增文字继承该次差异首个受影响片段的格式。日期由脚本以 UTC 生成，审阅作者由计划提供。
+Replacements across ordinary text runs preserve each deleted fragment's formatting. New text inherits the first affected run's formatting for that difference. The script generates dates in UTC; the plan supplies the review author.
 
-## 运行
+## Execution
 
 ```bash
 python scripts/word_revision.py check input.docx --plan plan.json
@@ -52,12 +52,12 @@ python scripts/word_revision.py verify input.docx revised.docx \
   --plan plan.json --receipt receipt.json
 ```
 
-所有命令输出 JSON。成功退出码为 `0`；冲突或失败为 `2`，`conflicts` 列出具体操作及原因。`check` 在内存中完成整批构建和核验。`apply` 发布完成的副本和回执，原稿保持原样；输出使用新路径。
+All commands return JSON. Success exits with `0`; conflicts or failures exit with `2`, with `conflicts` identifying affected operations and reasons. `check` builds and verifies the entire batch in memory. `apply` publishes the completed copy and receipt to fresh paths, preserving the source file.
 
-## 当前可执行的文字结构
+## Supported text structures
 
-核心处理正文和表格单元格内的普通文字，支持跨 run 的替换、插入、删除与批注。原稿其他位置的旧修订、批注、图片及其他 ZIP 部件均纳入保留核验。
+The core handles ordinary text in body paragraphs and table cells, including replacements, insertions, deletions, and comments across runs. Preservation checks cover existing revisions, comments, images, and other ZIP parts elsewhere in the source document.
 
-原文锚点包含字段、内容控件、旧修订、格式修订或跨越书签/批注边界时，脚本返回结构冲突并保持整批未写入。收到此类结果后，先明确该位置需要怎样的审阅语义，再选原生 Word 操作；普通文本锚点可直接缩小后重新预检。
+When a source anchor includes fields, content controls, existing revisions, formatting revisions, or crosses bookmark or comment boundaries, the script returns a structural conflict and leaves the entire batch unwritten. Determine the intended review behavior at that location before choosing a native Word operation. Ordinary text anchors can be narrowed and preflighted again.
 
-打开中的文档先保存到磁盘，再执行检查；写回原路径之前关闭目标文档并核对文件指纹。交付副本时保留回执和原稿即可再次运行 `verify`。
+Save an open document to disk before checking it. Before writing back to the original path, close the target document and confirm its fingerprint. Retain the original, plan, and receipt alongside the revised copy to rerun `verify`.
