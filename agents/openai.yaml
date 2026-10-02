@@ -1,0 +1,4 @@
+interface:
+  display_name: "Word 修订"
+  short_description: "批量修改 Word 文字，保留旧修订和批注，并核验内容与格式结构"
+  default_prompt: "使用 $word-revision 修改这份 Word 文档，保留既有修订与批注，并验证本轮修改。"
